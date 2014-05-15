@@ -34,10 +34,12 @@ public class TF_IDFSummary {
 				list.addSentence(parts);
 				contents.add(new sentence(parts));
 			}
+			System.out.println("input finished");
 			list.calc();
 			for(sentence sen:contents){
 				sen.calc(list);
 			}
+			System.out.println("calculated finished");
 			Collections.sort(contents,new sentenceComparator());
 			for(sentence sen:contents){
 				for(int i=0;i<sen.contents.length;i++){
@@ -55,5 +57,10 @@ public class TF_IDFSummary {
 			e.printStackTrace();
 			return false;
 		}
+	}
+
+	public static void main(String[] args){
+		TF_IDFSummary summary=new TF_IDFSummary();
+		summary.genSummary(Config.root+Config.wordSplitedFile,Config.path+Config.tf_idfSummaryFile);
 	}
 }
