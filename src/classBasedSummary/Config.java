@@ -9,8 +9,8 @@ public class Config {
 	// given
 	protected final static String wordSplitedFile = "splited.txt";
 	protected final static String wordVecFile = "word.vec";
-	protected final static String phraseFile = "phrase.txt";
 	// to generate
+	protected final static String phraseFile = "phrase.txt";
 	protected final static String synBasedOnVecFile = "vec-based-syn.list";
 	protected final static String newSynBasedOnVecFile = "vec-based-syn.new.list";
 

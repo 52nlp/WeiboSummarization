@@ -3,9 +3,9 @@ package naiveSummary;
 import java.util.Vector;
 
 public class Config {
-	// path and file
-	protected final static String root = "./doc/diaoyudao/";
-	protected final static String path = "./doc/diaoyudao/naive/";
+	// path and file 
+	protected final static String root = "./doc/yaan/";
+	protected final static String path = "./doc/yaan/naive/";
 	// given
 	protected final static String wordSplitedFile = "splited.txt";
 	// to generate
@@ -25,10 +25,10 @@ public class Config {
 
 	static {
 		keywords = new Vector<String>();
-		keywords.add("钓鱼岛/n");
-		// keywords.add("雅安/n");
-		// keywords.add("地震/n");
-		// keywords.add("雅安地震/n");
+//		keywords.add("钓鱼岛/n");
+		 keywords.add("雅安/n");
+		 keywords.add("地震/n");
+		 keywords.add("雅安地震/n");
 	}
 }
 

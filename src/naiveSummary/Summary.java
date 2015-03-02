@@ -18,11 +18,13 @@ public class Summary {
 	protected Vector<String> centralWords;
 	protected Vector<Node> rootsforward;
 	protected Vector<Node> rootsbackward;
+	protected Vector<String[]> sentences ;
 	
 	public Summary(Vector<String> r){
 		centralWords=new Vector<String>();
 		rootsforward=new Vector<Node>();
 		rootsbackward=new Vector<Node>();
+		sentences=new Vector<String[]>();
 //		parser=new WordTopicParser(Config.topicIndexFile,Config.thresholdValue);
 		for(int i=0;i<r.size();i++){
 			centralWords.add(r.get(i));
@@ -41,6 +43,7 @@ public class Summary {
 			//build the backward pattern tree and forward pattern tree
 			while((buffer=reader.readLine())!=null){
 				String[] words=buffer.split(" ");
+				sentences.add(words);
 				for(int i=0;i<words.length;i++){
 					int pos=centralWords.indexOf(words[i]);
 					if(pos>=0){
@@ -155,6 +158,76 @@ public class Summary {
 		try{
 			BufferedWriter writer=new BufferedWriter(new OutputStreamWriter(
 					new FileOutputStream(outfile),"UTF-8"));
+			Vector<List<sortObject>> sort=new Vector<List<sortObject>>();
+			double avgLen=0;
+			for(int i=0;i<sentences.size();i++)
+				avgLen+=sentences.get(i).length;
+			avgLen/=sentences.size();
+			avgLen=10;
+			for(int i=0;i<centralWords.size();i++)
+				sort.add(new ArrayList<sortObject>());
+			for(int i=0;i<sentences.size();i++){
+				double[] maxScore=new double[centralWords.size()];
+				for(int j=0;j<centralWords.size();j++)
+					maxScore[j]=0;
+				for(int j=0;j<sentences.get(i).length;j++){
+					String presentWord=sentences.get(i)[j];
+					int index=centralWords.indexOf(presentWord);
+					if(index>=0){
+						Node presentNode1=rootsbackward.get(index);
+						Node presentNode2=rootsforward.get(index);
+						double score=0;
+						for(int k=1;k<=j;k++){
+							presentWord=sentences.get(i)[j-k];
+							presentNode1=presentNode1.search(presentWord);
+							if(presentNode1==null)
+								break;
+							score+=presentNode1.value;
+						}
+						for(int k=1;k<sentences.get(i).length-j;k++){
+							presentWord=sentences.get(i)[j+k];
+							presentNode2=presentNode2.search(presentWord);
+							if(presentNode2==null)
+								break;
+							score+=presentNode2.value;
+						}
+						if(score>maxScore[index])
+							maxScore[index]=score;
+					}
+				}
+				for(int j=0;j<centralWords.size();j++){
+					if(sentences.get(i).length>avgLen)
+						maxScore[j]/=sentences.get(i).length;
+					else
+						maxScore[j]/=avgLen;
+					sort.get(j).add(new sortObject(sentences.get(i),maxScore[j]));
+				}
+			}
+			sortObjectComparator comparator=new sortObjectComparator();
+			for(int i=0;i<centralWords.size();i++){
+				Collections.sort(sort.get(i),comparator);
+				for(int j=0;j<100&&j<sort.get(i).size();j++){
+					String[] contents=(String[])sort.get(i).get(j).obj;
+					for(int w=0;w<contents.length;w++)
+						writer.write(contents[w]+' ');
+					writer.write( "\t"+sort.get(i).get(j).score+"\n");
+				}
+			}
+			writer.close();
+			return true;
+		}catch(IOException e){
+			System.out.println("Error While Loading the file "+outfile);
+			e.printStackTrace();
+			return false;
+		}
+	}
+	
+	/*
+	//generate the summary
+	public boolean printFrequentPattern(String outfile){
+		try{
+			BufferedWriter writer=new BufferedWriter(new OutputStreamWriter(
+					new FileOutputStream(outfile),"UTF-8"));
 			Vector<List<halfSummary>> leftall=new Vector<List<halfSummary>>();
 			Vector<List<halfSummary>> rightall=new Vector<List<halfSummary>>();
 			for(int i=0;i<rootsbackward.size();i++){
@@ -232,6 +305,7 @@ public class Summary {
 			return false;
 		}
 	}
+	*/
 	
 	//print the size of the tree
 	public void printSize(){

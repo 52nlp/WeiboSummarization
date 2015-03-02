@@ -9,20 +9,24 @@ import java.io.InputStreamReader;
 import java.io.OutputStreamWriter;
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.List;
 import java.util.Vector;
 
 import naiveSummary.Lib.*;
 
 public class BothWaySummary {
-	//central words
+		//central words
 		protected Vector<String> centralWords;
 		//tree's base words
 		protected Vector<Node> roots;
+		//sentences
+		protected Vector<String[]> sentences;
 		
 		//construction function
 		public BothWaySummary(Vector<String> r){
 			centralWords=new Vector<String>();
 			roots=new Vector<Node>();
+			sentences=new Vector<String[]>();
 			for(int i=0;i<r.size();i++){
 				centralWords.add(r.get(i));
 				roots.add(new Node(r.get(i)));
@@ -38,6 +42,7 @@ public class BothWaySummary {
 				//build the pattern tree with the principle of left first and then right
 				while((buffer=reader.readLine())!=null){
 					String[] words=buffer.split(" ");
+					sentences.add(words);
 					for(int i=0;i<words.length;i++){
 						int pos=centralWords.indexOf(words[i]);
 						if(pos>=0){
@@ -157,6 +162,106 @@ public class BothWaySummary {
 		public boolean printFrequentPattern(String outfile){
 			try{
 				BufferedWriter writer=new BufferedWriter(new OutputStreamWriter(
+						new FileOutputStream(outfile),"utf-8"));
+				Vector<List<sortObject>> sort=new Vector<List<sortObject>>();
+				double avgLen=0;
+				for(int i=0;i<sentences.size();i++)
+					avgLen+=sentences.get(i).length;
+				avgLen/=sentences.size();
+				avgLen=10;
+				System.out.println(avgLen);
+				for(int i=0;i<centralWords.size();i++)
+					sort.add(new ArrayList<sortObject>());
+				for(int i=0;i<sentences.size();i++){
+					double[] maxScore=new double[centralWords.size()];
+					for(int j=0;j<centralWords.size();j++)
+						maxScore[j]=0;
+					for(int j=0;j<sentences.get(i).length;j++){
+//						System.out.println(j);
+						String presentWord=sentences.get(i)[j];
+						int index=centralWords.indexOf(presentWord);
+						if(index>=0){
+							Node presentNode=roots.get(index);
+							double score=0;
+							for(int l=1,r=1,s=0,lc=0,rc=0;;){
+//								System.out.println(presentWord);
+								//left first.
+								if(s==0){
+									//left
+									s=1;
+									if(j-l<0||lc==1){
+										lc=1;
+										presentNode=presentNode.search("/blank");
+									}else{
+										presentWord=sentences.get(i)[j-l];
+										if(presentWord.indexOf("/w")>=0){
+											lc=1;
+											presentNode=presentNode.search("/blank");
+										}else{
+											presentNode=presentNode.search(presentWord);
+											score+=presentNode.value;
+										}
+									}
+									l++;
+								}else{
+									//right
+									s=0;
+									if(j+r>=sentences.get(i).length||rc==1){
+										rc=1;
+										presentNode=presentNode.search("/blank");
+									}else{
+										presentWord=sentences.get(i)[j+r];
+										if(presentWord.indexOf("/w")>=0){
+											rc=1;
+											presentNode=presentNode.search("/blank");
+										}else{
+											presentNode=presentNode.search(presentWord);
+											score+=presentNode.value;
+										}
+									}
+									r++;
+								}
+								if(lc==1&&rc==1)
+									break;
+							}
+							if(score>maxScore[index]){
+								maxScore[index]=score;
+							}
+						}
+					}
+					for(int j=0;j<centralWords.size();j++){
+						if(sentences.get(i).length>avgLen)
+							maxScore[j]/=sentences.get(i).length;
+						else
+							maxScore[j]/=avgLen;
+//						System.out.println(maxScore[j]);
+						sort.get(j).add(new sortObject(sentences.get(i),maxScore[j]));
+					}
+				}
+				sortObjectComparator comparator=new sortObjectComparator();
+				for(int i=0;i<centralWords.size();i++){
+					writer.write("============================"+centralWords.get(i)+"\n");
+					Collections.sort(sort.get(i),comparator);
+					for(int j=0;j<10&&j<sort.get(i).size();j++){
+						String[] contents=(String[])sort.get(i).get(j).obj;
+						for(int w=0;w<contents.length;w++)
+							writer.write(contents[w]+' ');
+						writer.write("\t"+sort.get(i).get(j).score+"\n");
+					}
+				}
+				writer.close();
+				return true;
+			}catch(IOException e){
+				System.out.println("Error While Loading "+outfile);
+				e.printStackTrace();
+				return false;
+			}
+		}
+		
+		/*
+		public boolean printFrequentPattern(String outfile){
+			try{
+				BufferedWriter writer=new BufferedWriter(new OutputStreamWriter(
 						new FileOutputStream(outfile),"UTF-8"));
 				for(int i=0;i<roots.size();i++){
 					Node presentNode=roots.get(i);
@@ -195,7 +300,8 @@ public class BothWaySummary {
 				e.printStackTrace();
 				return false;
 			}
-		}
+		}*/
+		
 		//for test
 		public static void main(String[] args){
 			BothWaySummary pattern=new BothWaySummary(Config.keywords);
